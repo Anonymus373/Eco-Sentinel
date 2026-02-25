@@ -6,6 +6,9 @@ import NDVIChart from "@/components/NDVIChart";
 import AlertFeed from "@/components/AlertFeed";
 import DistrictDetail from "@/components/DistrictDetail";
 import AnomalyPanel from "@/components/AnomalyPanel";
+import SatelliteTimeline from "@/components/SatelliteTimeline";
+import InterventionRecommender from "@/components/InterventionRecommender";
+import ClusteringViz from "@/components/ClusteringViz";
 import { type District } from "@/data/mockData";
 
 const Index = () => {
@@ -16,32 +19,41 @@ const Index = () => {
       <Header />
       <RiskOverview />
 
-      <div className="flex-1 grid grid-cols-12 gap-3" style={{ minHeight: "480px" }}>
-        {/* Map - takes 5 columns */}
-        <div className="col-span-5">
+      {/* Main Row: Map + Detail/NDVI + Alerts */}
+      <div className="grid grid-cols-12 gap-3" style={{ height: "460px" }}>
+        <div className="col-span-5 h-full">
           <EcoMap
             onDistrictSelect={setSelectedDistrict}
             selectedDistrict={selectedDistrict}
           />
         </div>
-
-        {/* Center: District detail + NDVI chart stacked */}
-        <div className="col-span-4 flex flex-col gap-3">
-          <div className="flex-1">
+        <div className="col-span-4 h-full flex flex-col gap-3">
+          <div className="flex-1 min-h-0">
             <DistrictDetail district={selectedDistrict} />
           </div>
-          <div>
+          <div className="h-[220px]">
             <NDVIChart districtName={selectedDistrict?.name} />
           </div>
         </div>
-
-        {/* Right: Alert feed */}
-        <div className="col-span-3">
+        <div className="col-span-3 h-full">
           <AlertFeed />
         </div>
       </div>
 
-      {/* Bottom row */}
+      {/* Second Row: Satellite Timeline + AI Recommender + Clustering */}
+      <div className="grid grid-cols-12 gap-3" style={{ height: "340px" }}>
+        <div className="col-span-3 h-full">
+          <SatelliteTimeline />
+        </div>
+        <div className="col-span-4 h-full">
+          <InterventionRecommender district={selectedDistrict} />
+        </div>
+        <div className="col-span-5 h-full">
+          <ClusteringViz />
+        </div>
+      </div>
+
+      {/* Bottom Row: Risk Rankings */}
       <div className="h-[260px]">
         <AnomalyPanel />
       </div>
