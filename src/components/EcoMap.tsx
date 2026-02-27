@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { districts, type District, type RiskLevel } from "@/data/mockData";
+import { districts as defaultDistricts, type District, type RiskLevel } from "@/data/mockData";
 
 const riskColors: Record<RiskLevel, string> = {
   low: "hsl(152, 70%, 45%)",
@@ -12,6 +12,8 @@ const riskColors: Record<RiskLevel, string> = {
 interface EcoMapProps {
   onDistrictSelect: (district: District) => void;
   selectedDistrict: District | null;
+  districts?: District[];
+  updatingDistrictId?: string | null;
 }
 
 // Normalize lat/lng to SVG coordinates within the Aravalli region
@@ -35,10 +37,11 @@ const riskRadius: Record<RiskLevel, number> = {
   immediate: 20,
 };
 
-const EcoMap = ({ onDistrictSelect, selectedDistrict }: EcoMapProps) => {
+const EcoMap = ({ onDistrictSelect, selectedDistrict, districts: districtsProp, updatingDistrictId }: EcoMapProps) => {
   const [hovered, setHovered] = useState<string | null>(null);
   const W = 500;
   const H = 420;
+  const districts = districtsProp || defaultDistricts;
 
   return (
     <motion.div
@@ -108,6 +111,7 @@ const EcoMap = ({ onDistrictSelect, selectedDistrict }: EcoMapProps) => {
             const { x, y } = toSvg(d.lat, d.lng, W, H);
             const isSelected = selectedDistrict?.id === d.id;
             const isHovered = hovered === d.id;
+            const isUpdating = updatingDistrictId === d.id;
             const r = riskRadius[d.riskLevel];
 
             return (
@@ -122,10 +126,18 @@ const EcoMap = ({ onDistrictSelect, selectedDistrict }: EcoMapProps) => {
                 <circle
                   cx={x}
                   cy={y}
-                  r={r * 2}
+                  r={isUpdating ? r * 3 : r * 2}
                   fill={riskColors[d.riskLevel]}
-                  opacity={isSelected ? 0.15 : 0.06}
+                  opacity={isUpdating ? 0.3 : isSelected ? 0.15 : 0.06}
+                  style={{ transition: "all 0.6s ease" }}
                 />
+                {/* Live update ring */}
+                {isUpdating && (
+                  <circle cx={x} cy={y} r={r * 1.5} fill="none" stroke="white" strokeWidth={1.5} opacity={0.6}>
+                    <animate attributeName="r" values={`${r};${r * 3.5}`} dur="1s" repeatCount="1" />
+                    <animate attributeName="opacity" values="0.6;0" dur="1s" repeatCount="1" />
+                  </circle>
+                )}
                 {/* Pulse ring for immediate */}
                 {d.riskLevel === "immediate" && (
                   <circle
