@@ -1,30 +1,404 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>ECO-SENTINEL</title>
-    <meta name="description" content="Power New India">
-    <meta name="author" content="Lovable" />
-
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de5b6ed8-a219-477f-8695-2185e9611f48/id-preview-fca1ccd1--a0e7cb91-aec2-4f81-80e0-812cc2a47c4a.lovable.app-1772217234407.png">
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de5b6ed8-a219-477f-8695-2185e9611f48/id-preview-fca1ccd1--a0e7cb91-aec2-4f81-80e0-812cc2a47c4a.lovable.app-1772217234407.png">
-    <meta property="og:title" content="ECO-SENTINEL">
-  <meta name="twitter:title" content="ECO-SENTINEL">
-  <meta property="og:description" content="Power New India">
-  <meta name="twitter:description" content="Power New India">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EcoSentinel — India's Early Warning System for Ecosystem Drift</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css"/>
 </head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#00ff88" stroke-width="1.2" fill="none"/>
+        <circle cx="16" cy="16" r="5" fill="#00ff88" opacity="0.9"/>
+        <path d="M16 2V11M16 21V30M4 9L11 13.5M21 18.5L28 23M4 23L11 18.5M21 13.5L28 9" stroke="#00ff88" stroke-width="0.8" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="logo-text-group">
+      <div class="logo-main">EcoSentinel</div>
+      <div class="logo-sub">India's Early Warning System for Ecosystem Drift</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><span class="live-dot"></span>LIVE MONITORING</div>
+    <div class="sat-badges">
+      <span class="sat-badge">Sentinel-2</span>
+      <span class="sat-badge">Landsat-9</span>
+    </div>
+    <div class="utc-time" id="utcTime">--:--:-- UTC</div>
+  </div>
+</header>
+
+<!-- ── NAV TABS ── -->
+<nav class="main-tabs">
+  <button class="tab active" data-tab="dashboard">National Dashboard</button>
+  <button class="tab" data-tab="aravalli">Aravalli Deep-Dive</button>
+  <button class="tab" data-tab="analytics">ML Analytics</button>
+  <button class="tab" data-tab="recommend">AI Recommendations</button>
+</nav>
+
+<!-- ════════════ NATIONAL DASHBOARD ════════════ -->
+<section id="tab-dashboard" class="tab-content active">
+
+  <div class="page-hero">
+    <h1 class="page-title">National Ecosystem Risk Dashboard</h1>
+    <p class="page-sub">Satellite intelligence converted into district-level intervention priorities — predicting ecological collapse before it happens.</p>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">DISTRICTS MONITORED</div><div class="kpi-v" id="kpiMonitored" style="color:#00ff88">712/742</div></div>
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">AVG NDVI INDEX</div><div class="kpi-v" id="kpiAvgNdvi" style="color:#00ff88">0.61</div></div>
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">● LOW RISK</div><div class="kpi-v" id="kpiLow" style="color:#22c55e">485</div></div>
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">▲ DRIFT RISK</div><div class="kpi-v" id="kpiDrift" style="color:#f59e0b">156</div></div>
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">◆ COLLAPSE RISK</div><div class="kpi-v" id="kpiCollapse" style="color:#f97316">58</div></div>
+    <div class="kpi"><div class="kpi-l" style="color:#7db896">⚠ IMMEDIATE</div><div class="kpi-v" id="kpiImmediate" style="color:#ef4444">13</div></div>
+  </div>
+
+  <!-- Map + side panels -->
+  <div class="map-section">
+    <div class="map-header">
+      <div class="section-label">SATELLITE RISK MAP — INDIA</div>
+      <div class="map-sub">Esri World Imagery · District risk markers · Click to inspect</div>
+      <div class="map-legend-row">
+        <span class="ml low">● LOW</span>
+        <span class="ml drift">▲ DRIFT</span>
+        <span class="ml collapse">◆ COLLAPSE</span>
+        <span class="ml immediate">⚠ IMMEDIATE</span>
+      </div>
+    </div>
+    <div class="map-body">
+      <div id="indiaMap" class="india-map"></div>
+      <div class="map-side">
+        <!-- NDVI chart -->
+        <div class="side-card">
+          <div class="side-card-title">NDVI TREND — <span id="selectedDistrict">SUNDARBANS DISTRICT</span></div>
+          <div class="side-card-sub">12-month vegetation index trajectory vs baseline</div>
+          <canvas id="chartNdviMain" height="130"></canvas>
+        </div>
+        <!-- National risk distribution -->
+        <div class="side-card">
+          <div class="side-card-title">NATIONAL RISK DISTRIBUTION</div>
+          <div class="risk-dist-bar">
+            <div class="rdb-seg low" style="width:65.3%"></div>
+            <div class="rdb-seg drift" style="width:21%"></div>
+            <div class="rdb-seg collapse" style="width:7.8%"></div>
+            <div class="rdb-seg immediate" style="width:1.7%"></div>
+          </div>
+          <div class="rdb-legend">
+            <div class="rdb-item"><span class="rdot low"></span>Low<span class="rval" id="rdLow">485</span></div>
+            <div class="rdb-item"><span class="rdot drift"></span>Drift<span class="rval" id="rdDrift">156</span></div>
+            <div class="rdb-item"><span class="rdot collapse"></span>Collapse<span class="rval" id="rdCollapse">58</span></div>
+            <div class="rdb-item"><span class="rdot immediate"></span>Immediate<span class="rval" id="rdImmediate">13</span></div>
+          </div>
+          <div class="rdb-desc">Risk scores integrate NDVI, moisture deficit, soil degradation, and biodiversity loss into composite vulnerability indices per district.</div>
+        </div>
+        <!-- Live alerts -->
+        <div class="side-card alerts-card">
+          <div class="side-card-title">LIVE ALERTS</div>
+          <div class="alerts-feed" id="alertsFeed"><!-- injected --></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- District risk monitor table -->
+  <div class="section-block">
+    <div class="section-header">
+      <div class="section-label">DISTRICT RISK MONITOR</div>
+      <div class="section-badge" id="districtCount">26 districts shown</div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>DISTRICT</th><th>STATE</th><th>RISK</th><th>SCORE</th><th>NDVI ↑</th><th>MOISTURE</th><th>LST °C</th><th>UPDATED</th></tr></thead>
+        <tbody id="districtTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ ARAVALLI DEEP-DIVE ════════════ -->
+<section id="tab-aravalli" class="tab-content">
+  <div class="page-hero">
+    <h1 class="page-title">Aravalli Corridor — Ecosystem Drift Analysis</h1>
+    <p class="page-sub">Unsupervised anomaly detection across 8 districts · Sentinel-2 10m resolution · 2019–2024 time series</p>
+  </div>
+
+  <!-- Aravalli KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-l">DISTRICTS MONITORED</div><div class="kpi-v c-green">8</div></div>
+    <div class="kpi"><div class="kpi-l">AVG NDVI SLOPE</div><div class="kpi-v c-red">-0.003/mo</div></div>
+    <div class="kpi"><div class="kpi-l">ANOMALIES DETECTED</div><div class="kpi-v c-orange">5</div></div>
+    <div class="kpi"><div class="kpi-l">CRITICAL DISTRICTS</div><div class="kpi-v c-red">3</div></div>
+    <div class="kpi"><div class="kpi-l">AVG MOISTURE DEFICIT</div><div class="kpi-v c-amber">0.31</div></div>
+  </div>
+
+  <!-- Aravalli map + district detail -->
+  <div class="aravalli-layout">
+    <div class="aravalli-left">
+      <div class="card-label">ARAVALLI CORRIDOR — RISK OVERLAY</div>
+      <div id="aravalliMap" class="aravalli-map"></div>
+      <div class="temporal-playback">
+        <div class="tp-label">SATELLITE TEMPORAL PLAYBACK<span class="tp-date" id="tpDate">Mar '24</span></div>
+        <div class="tp-bar-wrap">
+          <div class="tp-bar" id="tpBar">
+            <div class="tp-fill" id="tpFill"></div>
+          </div>
+        </div>
+        <div class="tp-months" id="tpMonths"></div>
+      </div>
+      <!-- Satellite ingestion log -->
+      <div class="sat-log">
+        <div class="sat-log-title">⬡ LIVE SATELLITE INGESTION</div>
+        <div id="satLogItems"></div>
+      </div>
+    </div>
+
+    <div class="aravalli-center">
+      <!-- District detail panel -->
+      <div class="district-detail-panel" id="districtDetailPanel">
+        <div class="ddp-name" id="ddpName">Nuh</div>
+        <div class="ddp-state" id="ddpState">Haryana</div>
+        <div class="ddp-ecrs-label">ECOSYSTEM COLLAPSE RISK SCORE</div>
+        <div class="ddp-ecrs-score" id="ddpScore">95</div>
+        <div class="ddp-ecrs-bar"><div class="ddp-ecrs-fill" id="ddpFill" style="width:95%"></div></div>
+        <div class="ddp-metrics">
+          <div class="ddp-metric"><span>⬡ NDVI Trend Slope</span><span id="ddpNdvi" class="ddp-val c-red">-0.047 /month</span></div>
+          <div class="ddp-metric"><span>⬡ Nightlight Volatility</span><span id="ddpNight" class="ddp-val c-orange">+44.8 σ</span></div>
+          <div class="ddp-metric"><span>⬡ Moisture Deficit</span><span id="ddpMoisture" class="ddp-val c-amber">0.32 km²</span></div>
+          <div class="ddp-metric"><span>⬡ Vegetation Slope</span><span id="ddpVeg" class="ddp-val c-red">-0.015 /mo</span></div>
+        </div>
+      </div>
+
+      <!-- AI Intervention Engine -->
+      <div class="ai-engine-panel">
+        <div class="card-label">⬡ AI INTERVENTION ENGINE</div>
+        <div id="aiRecs"><!-- injected --></div>
+      </div>
+    </div>
+
+    <div class="aravalli-right">
+      <!-- Alert feed -->
+      <div class="alert-feed-panel">
+        <div class="card-label">ALERT FEED <span class="live-dot"></span></div>
+        <div id="aravalliAlerts"><!-- injected --></div>
+      </div>
+
+      <!-- Unsupervised clustering -->
+      <div class="clustering-panel">
+        <div class="card-label">UNSUPERVISED ANOMALY CLUSTERING</div>
+        <div class="cluster-sub">K-Means (4 clusters) — Feature space: Nightlight Volatility × NDVI Drift × Moisture Deficit</div>
+        <div class="cluster-legend">
+          <span class="cl-item immediate">● Immediate</span>
+          <span class="cl-item collapse">● Urban Pressure</span>
+          <span class="cl-item drift">● Vegetation Stress</span>
+          <span class="cl-item low">● Stable Ecosystem</span>
+        </div>
+        <canvas id="clusterChart" height="160"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- District rankings bar chart -->
+  <div class="rankings-section">
+    <div class="section-label">DISTRICT RISK RANKINGS — TOP 10 <span style="color:var(--text-lo);font-size:0.6rem">Ecosystem Collapse Risk Score (ECRS) by anomaly severity</span></div>
+    <canvas id="rankingsChart" height="80"></canvas>
+  </div>
+
+  <!-- NDVI Trend charts grid (8 districts) -->
+  <div class="trends-grid" id="trendsGrid"><!-- injected --></div>
+</section>
+
+<!-- ════════════ ML ANALYTICS ════════════ -->
+<section id="tab-analytics" class="tab-content">
+  <div class="page-hero">
+    <h1 class="page-title">ML Analytics — Ecosystem Drift Detection</h1>
+    <p class="page-sub">Isolation Forest anomaly detection · K-Means clustering · Vegetation trend slope analysis</p>
+  </div>
+
+  <div class="pipeline-flow">
+    <div class="pf-step">
+      <div class="pf-icon">🛰️</div>
+      <div class="pf-label">Satellite Data<br><span>Sentinel-2 / MODIS</span></div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-step">
+      <div class="pf-icon">⚙️</div>
+      <div class="pf-label">Preprocessing<br><span>Cloud mask / Normalize</span></div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-step">
+      <div class="pf-icon">📊</div>
+      <div class="pf-label">Indices<br><span>NDVI / NDWI / LST / NDBI</span></div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-step active">
+      <div class="pf-icon">🤖</div>
+      <div class="pf-label">AI Anomaly Detection<br><span>Isolation Forest + K-Means</span></div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-step active">
+      <div class="pf-icon">🎯</div>
+      <div class="pf-label">EcoSentinel ECRS<br><span>Risk Score 0-100</span></div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-step active">
+      <div class="pf-icon">🚨</div>
+      <div class="pf-label">Alert Dashboard<br><span>Ministry-ready output</span></div>
+    </div>
+  </div>
+
+  <!-- Index table -->
+  <div class="analytics-grid-2">
+    <div class="card">
+      <div class="card-label">SPECTRAL INDICES EXPLAINED</div>
+      <table class="mini-table">
+        <thead><tr><th>INDEX</th><th>MEANING</th><th>FORMULA</th></tr></thead>
+        <tbody>
+          <tr><td class="c-green">NDVI</td><td>Vegetation health</td><td class="mono">(NIR-Red)/(NIR+Red)</td></tr>
+          <tr><td class="c-blue">NDWI</td><td>Water stress</td><td class="mono">(Green-SWIR)/(Green+SWIR)</td></tr>
+          <tr><td class="c-red">LST</td><td>Land surface temp</td><td class="mono">MODIS Band 31 × 0.02 − 273.15</td></tr>
+          <tr><td class="c-orange">NDBI</td><td>Urban expansion</td><td class="mono">(SWIR-NIR)/(SWIR+NIR)</td></tr>
+        </tbody>
+      </table>
+      <div class="formula-box">
+        <div class="formula-title">EcoSentinel ECRS Formula</div>
+        <div class="formula">ECRS = (vegetation_loss × 0.4) + (temp_anomaly × 0.3) + (water_stress × 0.3)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">SATELLITE SOURCES</div>
+      <table class="mini-table">
+        <thead><tr><th>SATELLITE</th><th>RESOLUTION</th><th>WHAT IT DETECTS</th></tr></thead>
+        <tbody>
+          <tr><td class="c-green">Sentinel-2</td><td>10 m</td><td>Vegetation health, urban change</td></tr>
+          <tr><td class="c-blue">Landsat-8/9</td><td>30 m</td><td>Long-term land use change</td></tr>
+          <tr><td class="c-amber">MODIS</td><td>250–500 m</td><td>Climate & vegetation trends</td></tr>
+        </tbody>
+      </table>
+      <div class="formula-box">
+        <div class="formula-title">Anomaly Detection Model</div>
+        <div class="formula">Isolation Forest (n=200, contamination=0.3) + K-Means (k=4 clusters)</div>
+        <div class="formula" style="margin-top:6px">Features: NDVI slope, LST trend, NDBI slope, night-light σ, moisture deficit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-index charts -->
+  <div class="analytics-charts">
+    <div class="card chart-tall">
+      <div class="card-label">NDVI vs NDWI CORRELATION (Aravalli)</div>
+      <canvas id="chartScatter" height="200"></canvas>
+    </div>
+    <div class="card chart-tall">
+      <div class="card-label">MULTI-INDEX RADAR — NUH vs ALWAR</div>
+      <canvas id="chartRadar" height="200"></canvas>
+    </div>
+    <div class="card chart-tall">
+      <div class="card-label">LST WARMING TREND (5-year)</div>
+      <canvas id="chartLst" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Seasonal decomposition explainer -->
+  <div class="card" style="margin-top:12px">
+    <div class="card-label">SEASONAL vs PERMANENT DRIFT DETECTION</div>
+    <div class="decomp-grid">
+      <div class="decomp-box">
+        <div class="decomp-title c-amber">SEASONAL (Normal)</div>
+        <div class="decomp-desc">NDVI dips in Nov–Feb (winter), recovers by Jul–Sep (monsoon). Baseline shifts ±0.06 annually. K-Means cluster: Stable.</div>
+      </div>
+      <div class="decomp-box">
+        <div class="decomp-title c-red">PERMANENT DRIFT (Alert)</div>
+        <div class="decomp-desc">NDVI floor drops each year. Monsoon recovery weaker than prior year. Isolation Forest flags as anomaly. Requires intervention.</div>
+      </div>
+      <div class="decomp-box">
+        <div class="decomp-title c-orange">URBAN SIGNAL</div>
+        <div class="decomp-desc">NDBI rising, night-light volatility >2σ, LST +0.5°C/yr. Illegal construction encroachment pattern. ECRS boost applied.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ AI RECOMMENDATIONS ════════════ -->
+<section id="tab-recommend" class="tab-content">
+  <div class="page-hero">
+    <h1 class="page-title">AI Intervention Recommendation System</h1>
+    <p class="page-sub">District-specific, priority-ranked intervention plans generated from ECRS + satellite features</p>
+  </div>
+
+  <div class="rec-layout">
+    <div class="rec-left">
+      <div class="card-label">SELECT DISTRICT</div>
+      <div class="district-selector" id="districtSelector"><!-- injected --></div>
+    </div>
+    <div class="rec-right">
+      <div class="rec-header-card" id="recHeaderCard">
+        <div class="rec-district-name" id="recDistrictName">Nuh, Haryana</div>
+        <div class="rec-ecrs-row">
+          <div>
+            <div class="rec-ecrs-label">ECRS</div>
+            <div class="rec-ecrs-val" id="recEcrsVal">95/100</div>
+          </div>
+          <div>
+            <div class="rec-ecrs-label">RISK TIER</div>
+            <div class="rec-tier-val" id="recTierVal">IMMEDIATE</div>
+          </div>
+          <div>
+            <div class="rec-ecrs-label">NDVI SLOPE</div>
+            <div class="rec-ecrs-val c-red" id="recNdviSlope">-0.047/mo</div>
+          </div>
+          <div>
+            <div class="rec-ecrs-label">ANOMALY</div>
+            <div class="rec-ecrs-val c-red" id="recAnomaly">DETECTED</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-label" style="margin:16px 0 10px">AI-GENERATED INTERVENTIONS</div>
+      <div id="recInterventions"><!-- injected --></div>
+
+      <div class="budget-summary" id="budgetSummary"><!-- injected --></div>
+    </div>
+  </div>
+
+  <!-- Government policy output -->
+  <div class="card policy-output">
+    <div class="card-label">POLICY TRANSLATION — MINISTRY-READY OUTPUT</div>
+    <div class="policy-grid">
+      <div class="policy-item">
+        <div class="policy-icon">🌿</div>
+        <div class="policy-title">Forest Department</div>
+        <div class="policy-desc">Priority reforestation maps auto-generated for districts with NDVI slope &lt; -0.003/month. Species selection: Dhok, Khejri, Rohida (Aravalli natives).</div>
+      </div>
+      <div class="policy-item">
+        <div class="policy-icon">💧</div>
+        <div class="policy-title">Water Resources Ministry</div>
+        <div class="policy-desc">Moisture deficit maps → check dam placement recommendations. 47 high-priority watershed zones flagged across Aravalli region.</div>
+      </div>
+      <div class="policy-item">
+        <div class="policy-icon">🏛️</div>
+        <div class="policy-title">Urban Planning</div>
+        <div class="policy-desc">NDBI expansion zones flagged for eco-sensitive area notifications. 12 districts showing illegal encroachment signatures.</div>
+      </div>
+      <div class="policy-item">
+        <div class="policy-icon">💰</div>
+        <div class="policy-title">Finance Commission</div>
+        <div class="policy-desc">ECRS-weighted climate adaptation fund allocation. Highest-risk districts receive 3× baseline allocation. Transparent, audit-ready scoring.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="script.js"></script>
+</body>
 </html>
