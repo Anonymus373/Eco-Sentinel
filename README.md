@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://eco-sentinel-trishul.lovable.app/
+**URL**: https://hilarious-profiterole-901794.netlify.app/
 
 
 
